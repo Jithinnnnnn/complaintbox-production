@@ -204,7 +204,7 @@ export default function Admin() {
                         <input type="password" placeholder="Password" value={creds.password} onChange={(e) => setCreds({ ...creds, password: e.target.value })} required />
                         <button type="submit">Login</button>
                     </form>
-                    <small>Default: admin / admin123</small>
+                    <small>Admin page</small>
                 </div>
             </div>
         );
