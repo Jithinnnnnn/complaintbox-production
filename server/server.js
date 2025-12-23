@@ -54,36 +54,69 @@ console.log(`📝 Environment: ${process.env.NODE_ENV || 'development'}`);
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+// ============= HEALTH CHECK ROUTE (FIRST - BEFORE ALL MIDDLEWARE) =============
+
+// Health check for Azure App Service - MUST be first to bypass all middleware
+// This endpoint works with NO Origin header (health probes, server-to-server)
+app.get('/health', (req, res) => {
+    res.status(200).json({
+        success: true,
+        status: 'ok',
+        timestamp: new Date().toISOString(),
+        uptime: process.uptime(),
+        database: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
+        environment: process.env.NODE_ENV || 'development'
+    });
+});
+
+// ============= BODY PARSING MIDDLEWARE =============
+
+// Body parser - must come before routes that need to parse request bodies
+app.use(express.json({ limit: '10mb' }));
+
 // ============= SECURITY MIDDLEWARE =============
 
 // Helmet - Security headers
 app.use(helmet());
 
-// CORS - Restrict to specific origins
+// Sanitize data - Prevent NoSQL injection
+app.use(mongoSanitize());
+
+// ============= CORS CONFIGURATION (SCOPED TO /api ROUTES ONLY) =============
+
+// Parse allowed origins from environment variable
 const allowedOrigins = process.env.ALLOWED_ORIGINS
     ? process.env.ALLOWED_ORIGINS.split(',').map(origin => origin.trim())
     : ['http://localhost:5173', 'http://localhost:3000'];
 
-app.use(cors({
+// CORS configuration - applies ONLY to /api routes
+const corsOptions = {
     origin: function (origin, callback) {
-        // In production, enforce strict origin checking
-        if (process.env.NODE_ENV === 'production' && !origin) {
-            return callback(new Error('CORS: Origin required in production'), false);
+        // Allow requests with no origin (mobile apps, Postman, server-to-server, health checks)
+        if (!origin) {
+            return callback(null, true);
         }
 
-        // In development, allow no origin (Postman, mobile apps, etc.)
-        if (!origin) return callback(null, true);
-
-        if (allowedOrigins.indexOf(origin) === -1) {
-            return callback(new Error('CORS policy violation'), false);
+        // Check if origin is in allowed list
+        if (allowedOrigins.indexOf(origin) !== -1) {
+            return callback(null, true);
         }
-        return callback(null, true);
+
+        // Reject origin not in whitelist
+        return callback(new Error('CORS policy violation: Origin not allowed'), false);
     },
-    credentials: true
-}));
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization']
+};
 
-// Rate limiting - Prevent brute force
-const limiter = rateLimit({
+// Apply CORS ONLY to /api routes
+app.use('/api', cors(corsOptions));
+
+// ============= RATE LIMITING (SCOPED TO /api ROUTES ONLY) =============
+
+// General API rate limiter
+const apiLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
     max: 100, // Limit each IP to 100 requests per windowMs
     message: 'Too many requests from this IP, please try again later.',
@@ -91,23 +124,19 @@ const limiter = rateLimit({
     legacyHeaders: false,
 });
 
+// Strict rate limiter for authentication endpoints
 const authLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000,
+    windowMs: 15 * 60 * 1000, // 15 minutes
     max: 5, // 5 login attempts per 15 minutes
     message: 'Too many login attempts, please try again later.',
     standardHeaders: true,
     legacyHeaders: false,
 });
 
-app.use('/api/', limiter);
+// Apply rate limiting ONLY to /api routes
+app.use('/api', apiLimiter);
 app.use('/api/auth/login', authLimiter);
 app.use('/api/auth/admin/login', authLimiter);
-
-// Body parser
-app.use(express.json({ limit: '10mb' }));
-
-// Sanitize data - Prevent NoSQL injection
-app.use(mongoSanitize());
 
 // ============= DATABASE CONNECTION =============
 
@@ -137,6 +166,18 @@ async function connectDatabase() {
         process.exit(1);
     }
 }
+
+// ============= API ROUTES =============
+
+// Root endpoint - simple status check
+app.get('/', (req, res) => {
+    res.json({
+        message: 'Complaint API Running ✅',
+        version: '1.0.0',
+        environment: process.env.NODE_ENV || 'development',
+        note: 'This is an API-only backend. Use /health for health checks.'
+    });
+});
 
 // ============= AUTH ROUTES =============
 
@@ -432,42 +473,45 @@ app.delete('/api/admin/complaints/:id', adminMiddleware, async (req, res) => {
     }
 });
 
+// ============= 404 HANDLER =============
 
-// Health check
-app.get('/', (req, res) => {
-    res.json({
-        message: 'Complaint API Running ✅',
-        version: '1.0.0',
-        environment: process.env.NODE_ENV || 'development'
+// Handle undefined API routes
+app.use('/api/*', (req, res) => {
+    res.status(404).json({ 
+        success: false, 
+        message: 'API endpoint not found',
+        path: req.originalUrl
     });
 });
 
-// Health check for Azure App Service
-app.get('/health', (req, res) => {
-    const healthStatus = {
-        status: 'healthy',
-        timestamp: new Date().toISOString(),
-        uptime: process.uptime(),
-        database: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected'
-    };
-    res.json(healthStatus);
+// Handle all other undefined routes
+app.use('*', (req, res) => {
+    res.status(404).json({ 
+        success: false, 
+        message: 'Route not found. This is an API-only backend.',
+        note: 'Use /health for health checks or /api/* for API endpoints'
+    });
 });
 
-// 404 handler
-app.use((req, res) => {
-    res.status(404).json({ success: false, message: 'Route not found' });
-});
+// ============= GLOBAL ERROR HANDLER =============
 
-// Global error handler
 app.use((err, req, res, next) => {
     console.error('Global error:', err.message);
+
+    // Handle CORS errors specifically
+    if (err.message.includes('CORS')) {
+        return res.status(403).json({ 
+            success: false, 
+            message: 'CORS policy violation: Origin not allowed' 
+        });
+    }
 
     // Don't leak error details in production
     const errorMessage = process.env.NODE_ENV === 'production'
         ? 'Internal server error'
         : err.message;
 
-    res.status(500).json({ success: false, message: errorMessage });
+    res.status(err.status || 500).json({ success: false, message: errorMessage });
 });
 
 // ============= SERVER STARTUP =============
@@ -481,7 +525,9 @@ async function startServer() {
         const server = app.listen(PORT, () => {
             console.log(`🚀 Server running on port ${PORT}`);
             console.log(`📍 Environment: ${process.env.NODE_ENV || 'development'}`);
-            console.log(`🌐 Health check: http://localhost:${PORT}/health\n`);
+            console.log(`🌐 Health check: http://localhost:${PORT}/health`);
+            console.log(`🔒 API-only backend - No static file serving`);
+            console.log(`✅ Ready for Azure App Service deployment\n`);
         });
 
         // ============= GRACEFUL SHUTDOWN =============
