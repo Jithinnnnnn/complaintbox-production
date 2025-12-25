@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import api from '../utils/api';
 import './Employee.css';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
 export default function Employee() {
     const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -15,7 +15,6 @@ export default function Employee() {
     const [loginForm, setLoginForm] = useState({ email: '', password: '' });
     const [registerForm, setRegisterForm] = useState({
         name: '',
-        email: 'default@example.com',
         password: '',
         employeeNumber: '',
         department: '',
@@ -79,7 +78,7 @@ export default function Employee() {
             const res = await api.post('/auth/register', registerForm);
             if (res.data.success) {
                 setRegistrationStatus('pending');
-                setRegisterForm({ name: '', email: 'default@example.com', password: '', employeeNumber: '', department: '', workLocation: '' });
+                setRegisterForm({ name: '', password: '', employeeNumber: '', department: '', workLocation: '' });
             }
         } catch (err) {
             alert(err.response?.data?.message || 'Registration failed');
@@ -301,7 +300,7 @@ export default function Employee() {
                         <h3>{user?.name || 'User'}</h3>
                         <p>{user?.role || 'Employee'}</p>
                         <div className="info">
-                            <span style={{ fontWeight: 'bold' }}>Mail id 📧 :{user?.email || 'N/A'}</span>
+                            <span style={{ fontWeight: 'bold' }}> Id 📧 :{user?.email || 'N/A'}</span>
                             <span style={{ fontWeight: 'bold' }}>Location 📍 : {user?.workLocation || 'N/A'}</span>
                             <span style={{ fontWeight: 'bold' }}>Department 🏬 :  {user?.department || 'N/A'}</span>
 

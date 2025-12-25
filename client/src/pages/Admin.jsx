@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
+import api from '../utils/api';
 import './Admin.css';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
 export default function Admin() {
     const [isAuth, setIsAuth] = useState(false);
@@ -38,27 +39,21 @@ export default function Admin() {
         e.preventDefault();
         setError('');
         try {
-            const res = await fetch(`${API_URL}/auth/admin/login`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    username: creds.username,
-                    password: creds.password
-                })
+            const res = await api.post('/auth/admin/login', {
+                username: creds.username,
+                password: creds.password
             });
 
-            const data = await res.json();
-
-            if (data.success && data.token) {
+            if (res.data.success && res.data.token) {
+                localStorage.setItem('adminToken', res.data.token);
                 setIsAuth(true);
-                localStorage.setItem('adminToken', data.token);
                 setError('');
             } else {
-                setError(data.message || 'Invalid credentials');
+                setError(res.data.message || 'Invalid credentials');
             }
         } catch (err) {
             console.error('Admin login error:', err);
-            setError('Login failed. Please check your connection.');
+            setError(err.response?.data?.message || 'Login failed. Please check your connection.');
         }
     };
 
@@ -69,56 +64,44 @@ export default function Admin() {
 
     const fetchUsers = async () => {
         try {
-            const token = localStorage.getItem('adminToken');
-            const res = await fetch(`${API_URL}/admin/users`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            const data = await res.json();
-            if (data.success) setUsers(data.users);
-        } catch (err) { console.error(err); }
+            const res = await api.get('/admin/users');
+            if (res.data.success) setUsers(res.data.users);
+        } catch (err) {
+            console.error('Fetch users error:', err);
+            showToast('Failed to load users', 'error');
+        }
     };
 
     const fetchPendingUsers = async () => {
         try {
-            const token = localStorage.getItem('adminToken');
-            const res = await fetch(`${API_URL}/admin/users/pending`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            const data = await res.json();
-            if (data.success) setPendingUsers(data.users);
-        } catch (err) { console.error(err); }
+            const res = await api.get('/admin/users/pending');
+            if (res.data.success) setPendingUsers(res.data.users);
+        } catch (err) {
+            console.error('Fetch pending users error:', err);
+        }
     };
 
     const fetchComplaints = async () => {
         try {
-            const token = localStorage.getItem('adminToken');
-            const res = await fetch(`${API_URL}/admin/complaints`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            const data = await res.json();
-            if (data.success) setComplaints(data.complaints);
-        } catch (err) { console.error(err); }
+            const res = await api.get('/admin/complaints');
+            if (res.data.success) setComplaints(res.data.complaints);
+        } catch (err) {
+            console.error('Fetch complaints error:', err);
+            showToast('Failed to load complaints', 'error');
+        }
     };
 
     const handleUserApproval = async (userId, status) => {
         try {
-            const token = localStorage.getItem('adminToken');
-            const res = await fetch(`${API_URL}/admin/users/${userId}/approval`, {
-                method: 'PATCH',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({ approvalStatus: status })
-            });
-            const data = await res.json();
-            if (data.success) {
+            const res = await api.patch(`/admin/users/${userId}/approval`, { approvalStatus: status });
+            if (res.data.success) {
                 fetchUsers();
                 fetchPendingUsers();
                 showToast(`User ${status === 'approved' ? 'approved' : 'rejected'} successfully!`, status === 'approved' ? 'success' : 'error');
             }
         } catch (err) {
-            showToast('Failed to update user status', 'error');
+            console.error('User approval error:', err);
+            showToast(err.response?.data?.message || 'Failed to update user status', 'error');
         }
     };
 
@@ -129,15 +112,10 @@ export default function Admin() {
     const executeDelete = async () => {
         const { id, type } = deleteModal;
         try {
-            const token = localStorage.getItem('adminToken');
             const endpoint = type === 'user' ? `/admin/users/${id}` : `/admin/complaints/${id}`;
-            const res = await fetch(`${API_URL}${endpoint}`, {
-                method: 'DELETE',
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            const data = await res.json();
+            const res = await api.delete(endpoint);
 
-            if (data.success) {
+            if (res.data.success) {
                 if (type === 'user') {
                     fetchUsers();
                     fetchPendingUsers();
@@ -148,10 +126,11 @@ export default function Admin() {
                 }
                 showToast(`${type === 'user' ? 'User' : 'Complaint'} deleted successfully`, 'success');
             } else {
-                showToast(data.message || 'Delete failed', 'error');
+                showToast(res.data.message || 'Delete failed', 'error');
             }
         } catch (err) {
-            showToast('Network error occurred', 'error');
+            console.error('Delete error:', err);
+            showToast(err.response?.data?.message || 'Network error occurred', 'error');
         } finally {
             setDeleteModal({ show: false, id: null, type: null, title: '' });
         }
@@ -159,22 +138,16 @@ export default function Admin() {
 
     const updateStatus = async (id, status) => {
         try {
-            const token = localStorage.getItem('adminToken');
-            const res = await fetch(`${API_URL}/admin/complaints/${id}/status`, {
-                method: 'PATCH',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({ status })
-            });
-            const data = await res.json();
-            if (data.success) {
+            const res = await api.patch(`/admin/complaints/${id}/status`, { status });
+            if (res.data.success) {
                 fetchComplaints();
-                if (selected?._id === id) setSelected(data.complaint);
+                if (selected?._id === id) setSelected(res.data.complaint);
                 showToast(`Status updated to ${status}`, 'success');
             }
-        } catch (err) { console.error(err); }
+        } catch (err) {
+            console.error('Update status error:', err);
+            showToast(err.response?.data?.message || 'Failed to update status', 'error');
+        }
     };
 
     const formatDate = (date) => {
