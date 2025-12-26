@@ -154,7 +154,7 @@ async function connectDatabase() {
 
         await mongoose.connect(mongoUri, {
             dbName: "complaint_box",
-            serverSelectionTimeoutMS: 5000,
+            serverSelectionTimeoutMS: 30000,
         });
 
         console.log('✅ MongoDB connected to complaint_box database');
