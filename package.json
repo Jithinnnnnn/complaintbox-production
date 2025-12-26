@@ -9,6 +9,6 @@
         "install-server": "cd server && npm install",
         "build-client": "cd client && npm run build",
         "build": "npm run install-client && npm run build-client && npm run install-server",
-        "start": "node server/index.js"
+        "start": "node server/server.js"
     }
 }
