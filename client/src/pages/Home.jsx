@@ -30,8 +30,9 @@ export default function Home() {
             <section className="how-it-works">
                 <div style={{ height: '35px' }}></div>
                 <h2 className="section-title"> </h2>
-                <h2 className="section-title">How It Works</h2>
+                <h2 className="section-title">Track and resolve in 4 easy steps</h2>
                 <div style={{ height: '60px' }}></div>
+
 
                 <div className="steps-container">
                     <div className="step-card">
@@ -76,8 +77,7 @@ export default function Home() {
                     </div>
                     <div className="footer-section">
                         <h4>Contact HR</h4>
-                        <p>📧 hr@capitalhonda.com</p>
-                        <p>📞 +91-XXXX-XXXXXX</p>
+                        <p>📧muhammed8921aslam@gmail.com</p>
                         <p>🕒 Mon-Sat: 9:00 AM - 6:00 PM</p>
 
                     </div>

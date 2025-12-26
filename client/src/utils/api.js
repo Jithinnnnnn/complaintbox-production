@@ -1,9 +1,10 @@
 import axios from 'axios';
 
 const api = axios.create({
-    baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000/api',
+    // ✅ Change this to a relative path.
+    // This works automatically on Localhost AND Azure!
+    baseURL: '/api',
 });
-
 // Request interceptor - Add token to all requests
 api.interceptors.request.use((config) => {
     const token = localStorage.getItem('token') || localStorage.getItem('adminToken');
