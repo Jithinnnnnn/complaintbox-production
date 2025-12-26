@@ -5,9 +5,15 @@ import dotenv from 'dotenv';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import mongoSanitize from 'express-mongo-sanitize';
+import path from 'path'; // <--- ADDED
+import { fileURLToPath } from 'url'; // <--- ADDED
 import User from './models/User.js';
 import Complaint from './models/Complaint.js';
 import { authMiddleware, adminMiddleware } from './middleware/auth.js';
+
+// ============= SETUP DIRECTORY PATHS (Required for ES Modules) =============
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // ============= ENVIRONMENT SETUP =============
 
@@ -77,7 +83,9 @@ app.use(express.json({ limit: '10mb' }));
 // ============= SECURITY MIDDLEWARE =============
 
 // Helmet - Security headers
-app.use(helmet());
+app.use(helmet({
+    contentSecurityPolicy: false, // Disabled briefly to avoid conflicts with React loading scripts
+}));
 
 // Sanitize data - Prevent NoSQL injection
 app.use(mongoSanitize());
@@ -169,13 +177,12 @@ async function connectDatabase() {
 
 // ============= API ROUTES =============
 
-// Root endpoint - simple status check
-app.get('/', (req, res) => {
+// Root endpoint - simple status check (Modified to not conflict with frontend)
+app.get('/api/status', (req, res) => {
     res.json({
         message: 'Complaint API Running ✅',
         version: '1.0.0',
-        environment: process.env.NODE_ENV || 'development',
-        note: 'This is an API-only backend. Use /health for health checks.'
+        environment: process.env.NODE_ENV || 'development'
     });
 });
 
@@ -473,24 +480,27 @@ app.delete('/api/admin/complaints/:id', adminMiddleware, async (req, res) => {
     }
 });
 
-// ============= 404 HANDLER =============
+// ============= 404 HANDLER FOR API ONLY =============
 
-// Handle undefined API routes
+// Handle undefined API routes (Keeps API behavior strict)
 app.use('/api/*', (req, res) => {
-    res.status(404).json({ 
-        success: false, 
+    res.status(404).json({
+        success: false,
         message: 'API endpoint not found',
         path: req.originalUrl
     });
 });
 
-// Handle all other undefined routes
-app.use('*', (req, res) => {
-    res.status(404).json({ 
-        success: false, 
-        message: 'Route not found. This is an API-only backend.',
-        note: 'Use /health for health checks or /api/* for API endpoints'
-    });
+// ============= SERVE FRONTEND (MODIFIED SECTION) =============
+
+// Serve static files from the React client "dist" folder
+// Note: If you use 'Create React App' instead of 'Vite', change 'dist' to 'build' below.
+app.use(express.static(path.join(__dirname, '../client/dist')));
+
+// The Catch-All Handler: Serves React's index.html for any unknown non-API routes.
+// This allows React Router to handle page navigation (e.g., /dashboard, /login).
+app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, '../client/dist/index.html'));
 });
 
 // ============= GLOBAL ERROR HANDLER =============
@@ -500,9 +510,9 @@ app.use((err, req, res, next) => {
 
     // Handle CORS errors specifically
     if (err.message.includes('CORS')) {
-        return res.status(403).json({ 
-            success: false, 
-            message: 'CORS policy violation: Origin not allowed' 
+        return res.status(403).json({
+            success: false,
+            message: 'CORS policy violation: Origin not allowed'
         });
     }
 
@@ -526,8 +536,8 @@ async function startServer() {
             console.log(`🚀 Server running on port ${PORT}`);
             console.log(`📍 Environment: ${process.env.NODE_ENV || 'development'}`);
             console.log(`🌐 Health check: http://localhost:${PORT}/health`);
-            console.log(`🔒 API-only backend - No static file serving`);
-            console.log(`✅ Ready for Azure App Service deployment\n`);
+            // MODIFIED: Updated log message
+            console.log(`✅ App Ready: Serving React Frontend + API`);
         });
 
         // ============= GRACEFUL SHUTDOWN =============
