@@ -5,7 +5,7 @@
         "node": "18.x"
     },
     "scripts": {
-        "install-client": "cd client && npm install",
+        "install-client": "cd client && npm install --production=false",
         "install-server": "cd server && npm install",
         "build-client": "cd client && npm run build",
         "build": "npm run install-client && npm run build-client && npm run install-server",
