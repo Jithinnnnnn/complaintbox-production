@@ -856,6 +856,36 @@
     .cta-content h2 {
         font-size: 2rem;
     }
+
+    /* Hide admin portal link on mobile for security */
+    .footer-section a[href*="admin"],
+    .mobile-hidden {
+        display: none !important;
+    }
+
+    /* Footer mobile styling */
+    .footer {
+        padding: 2.5rem 1.25rem 1.5rem;
+    }
+
+    .footer-content {
+        gap: 2rem;
+    }
+
+    .footer-section h4 {
+        font-size: 1.2rem;
+        margin-bottom: 1rem;
+    }
+
+    .footer-section p {
+        font-size: 0.9rem;
+        line-height: 1.6;
+    }
+
+    .footer-bottom {
+        padding-top: 1.25rem;
+        font-size: 0.85rem;
+    }
 }
 
 @media (max-width: 480px) {
