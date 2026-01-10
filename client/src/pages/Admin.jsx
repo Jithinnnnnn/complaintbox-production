@@ -257,8 +257,8 @@ export default function Admin() {
                                 <tbody>
                                     {filtered.map(c => (
                                         <tr key={c._id}>
-                                            <td data-label="ID">#{c.employeeNumber || 'N/A'}</td>
-                                            <td data-label="Employee"><strong>{c.employeeName}</strong><br /><small>{c.employeeEmail}</small></td>
+                                            <td data-label="PhNo">#{c.employeeNumber || 'N/A'}</td>
+                                            <td data-label="Employee"><strong>{c.employeeName}</strong></td>
                                             <td data-label="Category"><span className="badge">{c.category}</span></td>
                                             <td data-label="Priority"><span className="badge">{c.priority}</span></td>
                                             <td data-label="Status"><span className={`status ${c.status}`}>{c.status}</span></td>
