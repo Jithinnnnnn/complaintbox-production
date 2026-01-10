@@ -214,10 +214,27 @@ export default function Admin() {
                 <div className="stat pink"><h3>{stats.users}</h3><p>Users</p></div>
             </div>
 
-            <div className="tabs">
+            <div className="tabs desktop-tabs">
                 <button className={tab === 'complaints' ? 'active' : ''} onClick={() => setTab('complaints')}>Complaints</button>
                 <button className={tab === 'approvals' ? 'active' : ''} onClick={() => setTab('approvals')}>Approvals {pendingUsers.length > 0 && <span className="badge-count">{pendingUsers.length}</span>}</button>
                 <button className={tab === 'employees' ? 'active' : ''} onClick={() => setTab('employees')}>Employees</button>
+            </div>
+
+            {/* Mobile Bottom Navigation */}
+            <div className="mobile-nav">
+                <button className={tab === 'complaints' ? 'active' : ''} onClick={() => setTab('complaints')}>
+                    <span className="nav-icon">📋</span>
+                    <span className="nav-label">Complaints</span>
+                </button>
+                <button className={tab === 'approvals' ? 'active' : ''} onClick={() => setTab('approvals')}>
+                    <span className="nav-icon">✓</span>
+                    <span className="nav-label">Approvals</span>
+                    {pendingUsers.length > 0 && <span className="mobile-badge">{pendingUsers.length}</span>}
+                </button>
+                <button className={tab === 'employees' ? 'active' : ''} onClick={() => setTab('employees')}>
+                    <span className="nav-icon">👥</span>
+                    <span className="nav-label">Users</span>
+                </button>
             </div>
 
             <div className="content">
@@ -240,13 +257,13 @@ export default function Admin() {
                                 <tbody>
                                     {filtered.map(c => (
                                         <tr key={c._id}>
-                                            <td>#{c.employeeNumber || 'N/A'}</td>
-                                            <td><strong>{c.employeeName}</strong><br /><small>{c.employeeEmail}</small></td>
-                                            <td><span className="badge">{c.category}</span></td>
-                                            <td><span className="badge">{c.priority}</span></td>
-                                            <td><span className={`status ${c.status}`}>{c.status}</span></td>
-                                            <td>{formatDate(c.createdAt)}</td>
-                                            <td>
+                                            <td data-label="ID">#{c.employeeNumber || 'N/A'}</td>
+                                            <td data-label="Employee"><strong>{c.employeeName}</strong><br /><small>{c.employeeEmail}</small></td>
+                                            <td data-label="Category"><span className="badge">{c.category}</span></td>
+                                            <td data-label="Priority"><span className="badge">{c.priority}</span></td>
+                                            <td data-label="Status"><span className={`status ${c.status}`}>{c.status}</span></td>
+                                            <td data-label="Date">{formatDate(c.createdAt)}</td>
+                                            <td data-label="">
                                                 <button className="btn" onClick={() => setSelected(c)} style={{ marginRight: '5px' }}>View</button>
                                                 <button className="btn-icon-delete" onClick={() => confirmDelete(c._id, 'complaint', `Complaint #${c.employeeNumber}`)}>🗑️</button>
                                             </td>
@@ -267,12 +284,12 @@ export default function Admin() {
                                 <tbody>
                                     {pendingUsers.map(u => (
                                         <tr key={u._id}>
-                                            <td>#{u.employeeNumber}</td>
-                                            <td><strong>{u.name}</strong></td>
-                                            <td>{u.email}</td>
-                                            <td><span className="badge">{u.department}</span></td>
-                                            <td><span className="badge">{u.workLocation}</span></td>
-                                            <td>
+                                            <td data-label="Emp ID">#{u.employeeNumber}</td>
+                                            <td data-label="Name"><strong>{u.name}</strong></td>
+                                            <td data-label="Email">{u.email}</td>
+                                            <td data-label="Dept"><span className="badge">{u.department}</span></td>
+                                            <td data-label="Location"><span className="badge">{u.workLocation}</span></td>
+                                            <td data-label="">
                                                 <div className="approval-actions">
                                                     <button className="btn-approve" onClick={() => handleUserApproval(u._id, 'approved')}>✓</button>
                                                     <button className="btn-reject" onClick={() => handleUserApproval(u._id, 'rejected')}>✕</button>
@@ -295,13 +312,13 @@ export default function Admin() {
                                 <tbody>
                                     {users.map(u => (
                                         <tr key={u._id}>
-                                            <td>#{u.employeeNumber || 'N/A'}</td>
-                                            <td><strong>{u.name}</strong></td>
-                                            <td>{u.email}</td>
-                                            <td><span className="badge">{u.department}</span></td>
-                                            <td><span className="badge">{u.workLocation}</span></td>
-                                            <td><span className={`status ${u.approvalStatus}`}>{u.approvalStatus}</span></td>
-                                            <td>
+                                            <td data-label="ID">#{u.employeeNumber || 'N/A'}</td>
+                                            <td data-label="Name"><strong>{u.name}</strong></td>
+                                            <td data-label="Email">{u.email}</td>
+                                            <td data-label="Dept"><span className="badge">{u.department}</span></td>
+                                            <td data-label="Location"><span className="badge">{u.workLocation}</span></td>
+                                            <td data-label="Status"><span className={`status ${u.approvalStatus}`}>{u.approvalStatus}</span></td>
+                                            <td data-label="">
                                                 <button className="btn-icon-delete" onClick={() => confirmDelete(u._id, 'user', u.name)}>🗑️ Delete</button>
                                             </td>
                                         </tr>
