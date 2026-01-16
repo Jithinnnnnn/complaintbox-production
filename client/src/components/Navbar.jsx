@@ -54,13 +54,7 @@ export default function Navbar() {
                     >
                         Employee
                     </Link>
-                    <Link
-                        to="/admin"
-                        className={isActive('/admin') ? 'mobile-link active' : 'mobile-link'}
-                        onClick={() => setIsMobileMenuOpen(false)}
-                    >
-                        Admin
-                    </Link>
+
                 </div>
             )}
         </nav>

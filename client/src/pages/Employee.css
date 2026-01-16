@@ -11,56 +11,82 @@ body {
 }
 
 /* ========== PROFESSIONAL AUTH SCREEN ========== */
+/* Container */
 .auth-screen {
     min-height: 100vh;
     display: flex;
     align-items: center;
     justify-content: center;
-    background: linear-gradient(135deg, #8e97c1 0%, #b7c4d5 100%);
     padding: 1.5rem;
     position: relative;
     overflow: hidden;
+    /* Keeps bubbles inside */
+
+    /* Base Professional Background */
+    background-color: #9edaef00;
+    /* Deep Navy (Slate 900) */
+    z-index: 1;
+    /* Ensures content sits above bubbles */
 }
 
-/* Animated Background Pattern */
+/* Bubble 1 (Top Left) */
 .auth-screen::before {
     content: '';
     position: absolute;
     width: 600px;
     height: 600px;
-    background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
+    background: radial-gradient(circle, #0d273aae 0%, rgba(124, 160, 187, 0.759) 70%);
+    /* Blue 800 */
+    top: -150px;
+    left: -150px;
     border-radius: 50%;
-    top: -200px;
-    right: -200px;
-    animation: float 6s ease-in-out infinite;
+    filter: blur(80px);
+    /* The "Soft Bubble" effect */
+    z-index: -1;
+    opacity: 0.6;
+    animation: float-bubble-1 15s ease-in-out infinite alternate;
 }
 
+/* Bubble 2 (Bottom Right) */
 .auth-screen::after {
     content: '';
     position: absolute;
-    width: 400px;
-    height: 400px;
-    background: radial-gradient(circle, rgba(255, 255, 255, 0.08) 0%, transparent 70%);
+    width: 500px;
+    height: 500px;
+    background: radial-gradient(circle, #4892bd5f 0%, rgb(59, 131, 246) 70%);
+    /* Blue 500 */
+    bottom: -100px;
+    right: -100px;
     border-radius: 50%;
-    bottom: -150px;
-    left: -150px;
-    animation: float 8s ease-in-out infinite reverse;
+    filter: blur(60px);
+    z-index: -1;
+    opacity: 0.5;
+    animation: float-bubble-2 12s ease-in-out infinite alternate;
 }
 
-@keyframes float {
-
-    0%,
-    100% {
-        transform: translateY(0px);
+/* Professional Animations */
+@keyframes float-bubble-1 {
+    0% {
+        transform: translate(0, 0) scale(1);
     }
 
-    50% {
-        transform: translateY(-30px);
+    100% {
+        transform: translate(50px, 50px) scale(1.1);
+    }
+}
+
+@keyframes float-bubble-2 {
+    0% {
+        transform: translate(0, 0) scale(1);
+    }
+
+    100% {
+        transform: translate(-30px, -30px) scale(1.1);
     }
 }
 
 .auth-container {
-    background: white;
+    background: rgb(255, 255, 255);
     border-radius: 24px;
     padding: 2.5rem;
     max-width: 480px;
@@ -666,7 +692,8 @@ body {
     .field select,
     .field textarea {
         padding: 0.9rem 1rem;
-        font-size: 16px; /* Prevents zoom on iOS */
+        font-size: 16px;
+        /* Prevents zoom on iOS */
         border-radius: 12px;
     }
 
@@ -713,7 +740,7 @@ body {
         font-size: 1.2rem;
     }
 
-    .profile > p {
+    .profile>p {
         font-size: 0.85rem;
         padding: 0.4rem 0.8rem;
         margin-bottom: 0.8rem;
@@ -991,7 +1018,7 @@ body {
         font-size: 1.1rem;
     }
 
-    .profile > p {
+    .profile>p {
         font-size: 0.8rem;
         padding: 0.35rem 0.7rem;
     }
