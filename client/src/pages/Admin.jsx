@@ -88,9 +88,11 @@ export default function Admin() {
         } catch (err) {
             console.error('Fetch complaints error:', err);
 
-            showToast('Failed to load complaints', 'error');
-            showToast('Check if Employee is logged in the same device ', 'error');
-
+            if (err.response?.status === 403) {
+                showToast('Check if Employee is logged in the same device', 'error');
+            } else {
+                showToast('Failed to load complaints (Cant fetch the data)', 'error');
+            }
         }
     };
 
