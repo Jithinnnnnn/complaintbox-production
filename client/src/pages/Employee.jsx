@@ -66,7 +66,7 @@ export default function Employee() {
                 setLoginForm({ email: '', password: '' });
             }
         } catch (err) {
-            alert(err.response?.data?.message || 'Login failed');
+            alert(err.response?.data?.message || 'Login failed. Please check your connection.');
         }
     };
 

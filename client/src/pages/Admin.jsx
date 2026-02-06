@@ -16,6 +16,8 @@ export default function Admin() {
     const [filter, setFilter] = useState('All');
     const [deleteModal, setDeleteModal] = useState({ show: false, id: null, type: null, title: '' });
     const [toast, setToast] = useState({ show: false, message: '', type: '' });
+    const [aiSummary, setAiSummary] = useState('');
+    const [aiLoading, setAiLoading] = useState(false);
 
     useEffect(() => {
         const token = localStorage.getItem('adminToken');
@@ -107,6 +109,23 @@ export default function Admin() {
         } catch (err) {
             console.error('User approval error:', err);
             showToast(err.response?.data?.message || 'Failed to update user status', 'error');
+        }
+    };
+
+    const handleSummarize = async (text) => {
+        if (!text) return;
+        setAiLoading(true);
+        setAiSummary('');
+        try {
+            const res = await api.post('/complaints/summarize', { complaintText: text });
+            if (res.data.success) {
+                setAiSummary(res.data.summary);
+            }
+        } catch (err) {
+            console.error('Summarization error:', err);
+            showToast(err.response?.data?.message || 'Failed to generate summary', 'error');
+        } finally {
+            setAiLoading(false);
         }
     };
 
@@ -269,7 +288,7 @@ export default function Admin() {
                                             <td data-label="Status"><span className={`status ${c.status}`}>{c.status}</span></td>
                                             <td data-label="Date">{formatDate(c.createdAt)}</td>
                                             <td data-label="">
-                                                <button className="btn" onClick={() => setSelected(c)} style={{ marginRight: '5px' }}>View</button>
+                                                <button className="btn" onClick={() => { setSelected(c); setAiSummary(''); }} style={{ marginRight: '5px' }}>View</button>
                                                 <button className="btn-icon-delete" onClick={() => confirmDelete(c._id, 'complaint', `Complaint #${c.employeeNumber}`)}>🗑️</button>
                                             </td>
                                         </tr>
@@ -336,7 +355,7 @@ export default function Admin() {
 
                 {tab === 'complaints' && selected && (
                     <div>
-                        <button className="back" onClick={() => setSelected(null)}>← Back</button>
+                        <button className="back" onClick={() => { setSelected(null); setAiSummary(''); }}>← Back</button>
                         <div className="detail-header">
                             <div><h2>{selected.category}</h2><p>From {selected.employeeName} • {formatDate(selected.createdAt)}</p></div>
                             <div className="actions">
@@ -352,7 +371,30 @@ export default function Admin() {
                             <p><strong>Priority:</strong> {selected.priority}</p>
                             <p><strong>Status:</strong> <span className={`status ${selected.status}`}>{selected.status}</span></p>
                         </div>
-                        <div className="message-box"><h3>Complaint</h3><p>{selected.message}</p></div>
+                        <div className="message-box">
+                            <div className="message-header">
+                                <h3>Complaint Message</h3>
+                                <button
+                                    className={`ai-btn ${aiLoading ? 'loading' : ''}`}
+                                    onClick={() => handleSummarize(selected.message)}
+                                    disabled={aiLoading}
+                                >
+                                    {aiLoading ? '✨ Summarizing...' : '✨ AI Summarize'}
+                                </button>
+                            </div>
+                            <p>{selected.message}</p>
+
+                            {aiSummary && (
+                                <div className="ai-summary-container">
+                                    <div className="ai-summary-header">
+                                        <span>✨ AI Generated Summary</span>
+                                    </div>
+                                    <div className="ai-summary-content">
+                                        {aiSummary}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
                     </div>
                 )}
             </div>

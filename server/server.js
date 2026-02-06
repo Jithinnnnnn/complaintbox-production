@@ -10,6 +10,7 @@ import { fileURLToPath } from 'url'; // <--- ADDED
 import User from './models/User.js';
 import Complaint from './models/Complaint.js';
 import { authMiddleware, adminMiddleware } from './middleware/auth.js';
+import OpenAI from 'openai';
 
 // ============= SETUP DIRECTORY PATHS (Required for ES Modules) =============
 const __filename = fileURLToPath(import.meta.url);
@@ -51,6 +52,17 @@ if (process.env.JWT_SECRET.length < 32) {
 // Cache admin credentials (validated at startup, not per-request)
 const ADMIN_USERNAME = process.env.ADMIN_USERNAME;
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
+
+// ============= GITHUB MODELS (AI) SETUP =============
+const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
+const aiClient = new OpenAI({
+    baseURL: "https://models.inference.ai.azure.com",
+    apiKey: GITHUB_TOKEN || 'placeholder'
+});
+
+if (!GITHUB_TOKEN && process.env.NODE_ENV === 'production') {
+    console.warn('⚠️ GITHUB_TOKEN is missing. AI features will not work.');
+}
 
 console.log('✅ Environment variables validated');
 console.log(`📝 Environment: ${process.env.NODE_ENV || 'development'}`);
@@ -478,6 +490,46 @@ app.delete('/api/admin/complaints/:id', adminMiddleware, async (req, res) => {
     } catch (error) {
         console.error("Delete Complaint Error:", error);
         res.status(500).json({ success: false, message: 'Server error occurred' });
+    }
+});
+
+// ============= AI ROUTES (Admin Only) =============
+
+/**
+ * Summarize a complaint using GitHub Models (GPT-4o-mini)
+ * Route: POST /api/complaints/summarize
+ */
+app.post('/api/complaints/summarize', adminMiddleware, async (req, res) => {
+    try {
+        const { complaintText } = req.body;
+
+        if (!complaintText) {
+            return res.status(400).json({ success: false, message: 'Complaint text is required' });
+        }
+
+        if (!process.env.GITHUB_TOKEN) {
+            return res.status(503).json({ success: false, message: 'AI service not configured on server' });
+        }
+
+        const response = await aiClient.chat.completions.create({
+            messages: [
+                { role: "system", content: "You are a professional assistant. Summarize the following employee complaint into one concise, professional sentence that captures the core issue for an admin." },
+                { role: "user", content: complaintText }
+            ],
+            model: "gpt-4o-mini",
+            temperature: 0.5,
+            max_tokens: 100
+        });
+
+        const summary = response.choices[0].message.content.trim();
+        res.json({ success: true, summary });
+
+    } catch (error) {
+        console.error('AI Summarization Error:', error.message);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to generate AI summary. Please check your connection or API key.'
+        });
     }
 });
 
