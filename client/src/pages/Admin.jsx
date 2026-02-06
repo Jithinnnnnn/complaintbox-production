@@ -87,7 +87,10 @@ export default function Admin() {
             if (res.data.success) setComplaints(res.data.complaints);
         } catch (err) {
             console.error('Fetch complaints error:', err);
+
             showToast('Failed to load complaints', 'error');
+            showToast('Check if Employee is logged in the same device ', 'error');
+
         }
     };
 

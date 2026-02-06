@@ -167,10 +167,11 @@ async function connectDatabase() {
         console.error('❌ MongoDB Connection Error:');
         console.error('Error:', error.message);
         console.error('\n💡 Common fixes:');
-        console.error('1. Verify MONGO_URI is correct');
-        console.error('2. Check MongoDB Atlas IP whitelist (0.0.0.0/0 for Azure)');
-        console.error('3. Ensure database user has correct permissions');
-        console.error('4. Check if password has special characters (URL encode them)\n');
+        console.error('1. Check Internet Connection');
+        console.error('2. Verify MONGO_URI is correct');
+        console.error('3. Check MongoDB Atlas IP whitelist (0.0.0.0/0 for Azure)');
+        console.error('4. Ensure database user has correct permissions');
+        console.error('5. Check if password has special characters (URL encode them)\n');
         process.exit(1);
     }
 }

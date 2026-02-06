@@ -37,7 +37,7 @@ export default function Home() {
                         <Link to="/employee" className="btn-secondary">
                             File a Complaint
                         </Link>
-                        <Link to="/status" className="btn-secondary">
+                        <Link to="/employee" className="btn-secondary">
                             Check Status
                         </Link>
                     </div>
